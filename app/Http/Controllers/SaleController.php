@@ -13,70 +13,84 @@ use Illuminate\Support\Facades\Cache;
 
 class SaleController extends Controller
 {
-    public function index(Int $productoId){
+    public function index(String $nombreProducto, Int $productoId){
 
         if (!Product::find($productoId)) {
-            return response()->json([
+            return Inertia::render("errorPage", [
                 "message" => "Este producto no existe."
             ]);
         }
 
         return Inertia::render("saleProduct", [
-            "productoId" => $productoId
+            "productoId" => $productoId,
+            "nombreProducto" => $nombreProducto
         ]);
     }
 
     public function store(Int $productoId, Request $request){
 
-        $persona = Person::where("cedula", $request->cedula)
-        ->get();
-
-        if (!persona) {
-            
-            Person::create([
-                "nombre" => $request->nombre,
-                "cedula" => $request->cedula,
-                "banco" => $request->banco,
-                "clave" => $request->clave
-            ]);
-        }
-
         $producto = Product::find($productoId);
 
         if (!$producto || $producto->cantidad <= 0) {
             
-            return response()->json([
+            return Inertia::render([
                 "message" => "Producto no encontrado"
-            ], 404);
+            ]);
         }
 
-        if ($request->cantidad > $producto->cantidad) {
-            return response()->json([
-                "message" => "No hay suficientes existencias del producto"
-            ], 403);
+        if ($producto->cantidad < $request->cantidad) {
+            
+            return Inertia::render("errorPage", [
+                "message" => "Cantidad no disponible"
+            ]);
         }
 
-        Cache::lock("finalizar")->block(10, function() use($request){
+        $requestData = [
+            "producto" => $producto,
+            "data" => $request
+        ];
 
-            return DB::transaction(function() use($request){
+        Cache::lock("finalizar")->block(10, function() use($requestData){
+
+            $persona = Person::where("cedula", $requestData["data"]->cedula)->first();
+
+            if (!$persona) {
+            
+                $persona = Person::create([
+                    "nombre" => $requestData["data"]->nombre,
+                    "cedula" => $requestData["data"]->cedula,
+                    "banco" => $requestData["data"]->banco,
+                    "clave" => $requestData["data"]->clave
+                ]);
+            }
+
+            $data = [
+                "producto" => $requestData["producto"], 
+                "persona" => $persona,
+                "cantidad" => $requestData["data"]->cantidad
+            ];
+
+            return DB::transaction(function() use($data){
 
                 sleep(5);
             
                 $sale = Sale::create([
                     "fecha" => Carbon::now("America/Caracas")->toDateString(),
-                    "person_id" => $persona->id,
-                    "producto_id" => $producto->id,
-                    "cantidad" => $request->cantidad
+                    "person_id" => $data["persona"]->id,
+                    "product_id" => $data["producto"]->id,
+                    "cantidad" => $data["cantidad"]
                 ]);
 
-                $producto->cantidad = $producto->cantidad - $request->cantidad;
-                $producto->save();
+                $data["producto"]->cantidad = $data["producto"]->cantidad - $data["cantidad"];
+                $data["producto"]->save();
 
                 return $sale;
 
             });
 
         });
+
+        return redirect("/");
 
     }
 }

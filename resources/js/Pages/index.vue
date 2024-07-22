@@ -1,6 +1,6 @@
 <script setup>
-import { Link } from "@inertiajs/vue3"
-
+import ProductCard from '../components/ProductCard.vue'
+import navBar from "../components/navBar.vue"
 const props = defineProps({
     productos:Array
 })
@@ -8,29 +8,23 @@ const props = defineProps({
 </script>
 
 <template>
-    <ul>
-        <li>
-            <Link href="/">Inicio</Link>
-        </li>
-        <li>
-            <Link href="/create-product">Crear Producto</Link>
-        </li>
+    <v-app>
+        <navBar></navBar>
+        <v-main class="bg-grey-lighten-3">
+            <v-container>
+                <v-row>
+                    <v-col
+                    v-for="producto in productos"
+                    :key="producto.id"
+                    cols="4"
+                    >
+                        <ProductCard :nombre="producto.nombre" :id="producto.id"
+                        :precio="producto.precio" :cantidad="producto.cantidad"
+                        :imagen="producto.imagen"/>
 
-        <ul>
-            <li v-for="producto in props.productos">
-                <Link :href="`/edit-productImage/${producto.nombre}/${producto.id}`">
-                    <img :src="`uploads/${producto.imagen}`" alt="">
-                </Link>
-                <p>{{producto.nombre}}</p>
-                <p>{{producto.precio}}</p>
-                <p>
-                    <Link :href="`/delete-product/${producto.id}`"
-                    method="delete" as="button">
-                        Eliminar
-                    </Link>
-                </p>
-
-            </li>
-        </ul>
-    </ul>
+                    </v-col>
+                </v-row>
+            </v-container>
+        </v-main>
+    </v-app>
 </template>

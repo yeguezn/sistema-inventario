@@ -54,9 +54,7 @@ class ProductController extends Controller
             $archivo->move(public_path("uploads"), $nombreArchivo);
         }
 
-        return response()->json([
-            "message" => "Nuevo producto creado con éxito"
-        ], 200);
+        return redirect("/");
     }
 
     /**
@@ -78,11 +76,11 @@ class ProductController extends Controller
         $producto = Product::find($id);
 
         if (!$producto) {
-            return response()->json([
+            return Inertia::render("errorPage", [
 
                 "message" => "Este producto no existe."
 
-            ], 404);
+            ]);
         }
 
         return Inertia::render("editProduct", [
@@ -104,11 +102,7 @@ class ProductController extends Controller
         $producto->cantidad = $request->cantidad;
         $producto->save();
 
-        return response()->json([
-
-            "message" => "Producto actualizado exitosamente."
-
-        ], 200);
+        return redirect("/");
     }
 
     /**
@@ -119,11 +113,11 @@ class ProductController extends Controller
         $producto = Product::find($id);
 
         if (!$producto) {
-            return response()->json([
+            return Inertia::render("errorPage", [
 
                 "message" => "Este producto no existe."
 
-            ], 404);
+            ]);
         }
 
         $rutaImagen = public_path("uploads/$producto->imagen");
@@ -144,11 +138,11 @@ class ProductController extends Controller
         $producto = Product::find($id);
 
         if (!$producto) {
-            return response()->json([
+            return Inertia::render("errorPage", [
 
                 "message" => "Este producto no existe."
 
-            ], 404);
+            ]);
         }
 
         $rutaImagen = public_path("uploads/$producto->imagen");
@@ -168,6 +162,8 @@ class ProductController extends Controller
         
         $producto->imagen = $nombreArchivo;
         $producto->save();
+
+        return redirect("/");
 
     }
 }
